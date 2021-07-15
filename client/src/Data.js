@@ -57,7 +57,10 @@ export default class Data {
     });
 
     if (res.status === 200) {
-      return res.json().then((data) => data);
+      return res.json().then((data) => {
+        console.log(data);
+        return data;
+      });
     } else if (res.status === 401) {
       return null;
     } else {
@@ -70,6 +73,57 @@ export default class Data {
     const res = await this.api('/users', 'Post', user);
 
     if (res.status === 201) {
+      return [];
+    } else if (res.status === 400) {
+      return res.json().then((data) => data.errors);
+    } else {
+      throw new Error();
+    }
+  }
+
+  // POST  method , creates a new course.
+
+  async createCourse(course, emailAddress, password) {
+    const res = await this.api('/courses', 'Post', course, true, {
+      emailAddress,
+      password,
+    });
+
+    if (res.status === 201) {
+      return [];
+    } else if (res.status === 400) {
+      return res.json().then((data) => data.errors);
+    } else {
+      throw new Error();
+    }
+  }
+
+  // PUT request method for updating and individual course's information.
+  // available only to authenticated AND authorized users
+  async updateCourse(course, courseId, emailAddress, password) {
+    const res = await this.api(`/courses/${courseId}`, 'Put', course, true, {
+      emailAddress,
+      password,
+    });
+
+    if (res.status === 204) {
+      return [];
+    } else if (res.status === 400) {
+      return res.json().then((data) => data.errors);
+    } else {
+      throw new Error();
+    }
+  }
+
+  // DELETE request method for deleting a course from the database.
+  // available only to authenticated AND authorized users.
+  async deleteCourse(courseId, emailAddress, password) {
+    const res = await this.api(`/courses/${courseId}`, 'Delete', null, true, {
+      emailAddress,
+      password,
+    });
+
+    if (res.status === 204) {
       return [];
     } else if (res.status === 400) {
       return res.json().then((data) => data.errors);

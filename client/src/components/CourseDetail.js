@@ -3,11 +3,13 @@ import { useParams, Link, useHistory } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import Context from '../Context';
 
+// renders an individual course's details
 const CourseDetails = () => {
   // data
   const context = useContext(Context.AppContext);
   const signedIn = context.authedUser;
 
+  // url manipulation
   const history = useHistory();
   const { id } = useParams();
 
@@ -15,7 +17,7 @@ const CourseDetails = () => {
   const [course, setCourse] = useState({});
   const [user, setUser] = useState({});
 
-  // calls method to fetch user data
+  // calls method to fetch data
   useEffect(() => {
     context.data
       .getCourseDetails(id)
@@ -34,6 +36,8 @@ const CourseDetails = () => {
     <main>
       <div className="actions--bar">
         <div className="wrap">
+          {/* removes Update and Delete links if not authorized to
+                    perform those actions on this course */}
           {signedIn && signedIn.id === user.id ? (
             <>
               <Link className="button" to={`/courses/${id}/update`}>
@@ -78,5 +82,4 @@ const CourseDetails = () => {
     </main>
   );
 };
-
 export default CourseDetails;
