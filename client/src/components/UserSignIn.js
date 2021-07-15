@@ -1,96 +1,96 @@
-import React, { Component } from 'react';
+import React, { useState, useContext } from 'react';
+import { Link, useHistory } from 'react-router-dom';
+import ValidationErrors from './ValidationErrors';
+import Context from '../Context';
 
-/**
- * User Sign in form component.
- */
-export default class UserSignIn extends Component {
-  state = {
-    emailAddress: '',
-    password: '',
-    errors: [],
-  };
+// existing user authentication
+const UserSignIn = () => {
+  const context = useContext(Context.AppContext);
+  const history = useHistory();
 
-  /**
-   * If user clicks cancel, redirects to the front page.
-   *
-   * @param {event} e
-   */
-  cancel = (e) => {
-    e.preventDefault();
-    this.props.history.push('/');
-  };
+  // state variables
+  const [emailAddress, setEmailAddress] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState([]);
 
-  /**
-   * Keeps track of changes in the form fields and updates the state values.
-   *
-   * @param {event} e
-   */
-  change = (e) => {
-    const name = e.target.name;
+  // Keeps track of changes in the form fields and updates the state values.
+  const change = (e) => {
     const value = e.target.value;
 
-    this.setState(() => {
-      return {
-        [name]: value,
-      };
-    });
+    switch (e.target.name) {
+      case 'emailAddress':
+        setEmailAddress(value);
+        break;
+      case 'password':
+        setPassword(value);
+        break;
+      default:
+        return;
+    }
+  };
+
+  // If user clicks cancel, redirects to the "/" route
+  const cancel = (e) => {
+    e.preventDefault();
+    history.push('/');
   };
 
   /**
    * When submit is clicked, signs user in and redirects the user to the previous page
    * before sign in route. If the login credentials are wrong, displays an error above
    * the form. If there's an unexpected error, redirects to '/error'.
-   *
-   * @param {event} e
    */
-  submit = async (e) => {
+  const submit = (e) => {
     e.preventDefault();
-    const { emailAddress, password } = this.state;
-    const { from } = this.props.location.state || { from: { pathname: '/' } };
-    const response = await this.props.context.actions.signIn(
-      emailAddress,
-      password
-    );
-    if (response === 200) {
-      this.props.history.push(from);
-    } else if (response === 500) {
-      this.props.history.push('/error');
-    } else {
-      const errors = ['Sign in was unsuccesful!'];
-      this.setState({ errors });
-    }
+
+    context.actions
+      .signIn(emailAddress, password)
+      .then((user) => {
+        if (user === null) {
+          setErrors(['Sign-in was unsuccessful']);
+        } else {
+          const { from } = history.location.state || { from: history.goBack() };
+          history.push(from);
+        }
+      })
+      .catch(() => history.push('/error'));
   };
+  return (
+    <main>
+      <div className="form--centered">
+        <h2>Sign In</h2>
+        <ValidationErrors errors={errors} />
+        <form onSubmit={submit}>
+          <label>Email Address</label>
+          <input
+            id="emailAddress"
+            name="emailAddress"
+            type="email"
+            onChange={change}
+            value={emailAddress}
+          />
+          <label>Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            onChange={change}
+            value={password}
+          />
+          <button className="button" type="submit">
+            Sign In
+          </button>
+          <button className="button button-secondary" onClick={cancel}>
+            Cancel
+          </button>
+        </form>
+        <p>
+          Don't have a user account? Click here to{' '}
+          <Link to="/signup">sign up</Link>!
+        </p>
+      </div>
+    </main>
+  );
+};
 
-  render() {
-    return (
-      <main>
-        <div className="form--centered">
-          <h2>Sign In</h2>
-
-          <form onSubmit={this.submit}>
-            <label htmlFor="emailAddress">Email Address</label>
-            <input
-              id="emailAddress"
-              name="emailAddress"
-              type="email"
-              onChange={this.change}
-            />
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              onChange={this.change}
-            />
-            <button className="button" type="submit">
-              Sign In
-            </button>
-            <button className="button button-secondary" onClick={this.cancel}>
-              Cancel
-            </button>
-          </form>
-        </div>
-      </main>
-    );
-  }
-}
+export default UserSignIn;

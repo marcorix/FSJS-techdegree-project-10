@@ -1,81 +1,82 @@
-import React, { Component, Fragment } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, Link, useHistory } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import Context from '../Context';
 
-export default class CourseDetail extends Component {
-  state = {
-    course: null,
-  };
+const CourseDetails = () => {
+  // data
+  const context = useContext(Context.AppContext);
+  const signedIn = context.authedUser;
 
-  componentDidMount() {
-    const courseId = this.props.match.params.id;
+  const history = useHistory();
+  const { id } = useParams();
 
-    axios
-      .get(`http://localhost:5000/api/courses/${courseId}`)
+  // state variables
+  const [course, setCourse] = useState({});
+  const [user, setUser] = useState({});
+
+  // calls method to fetch user data
+  useEffect(() => {
+    context.data
+      .getCourseDetails(id)
       .then((res) => {
-        const course = res.data;
-        this.setState({ course });
-        if (course === null) {
-          this.props.history.push('/notfound');
+        if (res) {
+          setCourse(res);
+          setUser(res.User);
+        } else {
+          history.push('/notfound');
         }
       })
-      .catch((err) => {
-        if (err.response.status === 500) {
-          this.props.history.push('/error');
-        }
-      });
-  }
+      .catch(() => history.push('/error'));
+  }, [id, context.data, history]);
 
-  render() {
-    if (!this.state.course) {
-      return null;
-    }
-    console.log(this.state.course);
-    const { title, estimatedTime, id } = this.state.course;
-    const { firstName, lastName } = this.state.course.User;
-
-    return (
-      <main>
-        <div class="actions--bar">
-          <div class="wrap">
-            <Link className="button" to={`/courses/${id}/update`}>
-              Update Course
-            </Link>
-            <Link className="button" to={`/courses/${id}/delete`}>
-              Delete Course
-            </Link>
-            <Link className="button" to="/">
+  return (
+    <main>
+      <div className="actions--bar">
+        <div className="wrap">
+          {signedIn && signedIn.id === user.id ? (
+            <>
+              <Link className="button" to={`/courses/${id}/update`}>
+                Update Course
+              </Link>
+              <Link className="button" to={`/courses/${id}/delete`}>
+                Delete Course
+              </Link>
+              <Link className="button button-secondary" to="/">
+                Return to List
+              </Link>
+            </>
+          ) : (
+            <Link className="button button-secondary" to="/">
               Return to List
             </Link>
-          </div>
+          )}
         </div>
-        <div className="wrap">
-          <h2>Course Detail</h2>
-          <form>
-            <div className="main--flex">
-              <div>
-                <h3 className="course--detail--title">Course</h3>
-                <h4 className="course--name">{title}</h4>
-                <p>By {firstName + ' ' + lastName}</p>
-                {<ReactMarkdown children={this.state.course.description} />}
-              </div>
-              <div>
-                <h3 className="course--detail--title">Estimated Time</h3>
-                <p>{estimatedTime}</p>
-                <h3 className="course--detail--title">Materials Needed</h3>
-                <ul className="course--detail--list">
-                  {
-                    <ReactMarkdown
-                      children={this.state.course.materialsNeeded}
-                    />
-                  }
-                </ul>
-              </div>
+      </div>
+      <div className="wrap">
+        <h2>Course Details</h2>
+        <form>
+          <div className="main--flex">
+            <div>
+              <h3 className="course--detail--title">Course</h3>
+              <h4 className="course--name">{course.title}</h4>
+              <p>By {`${user.firstName} ${user.lastName}`}</p>
+              <ReactMarkdown>{course.description}</ReactMarkdown>
             </div>
-          </form>
-        </div>
-      </main>
-    );
-  }
-}
+            <div>
+              <h3 className="course--detail--title">Estimated Time</h3>
+              <p>{course.estimatedTime}</p>
+
+              <h3 className="course--detail--title">Materials Needed</h3>
+              <ReactMarkdown className="course--detail--list">
+                {course.materialsNeeded}
+              </ReactMarkdown>
+            </div>
+          </div>
+        </form>
+      </div>
+    </main>
+  );
+};
+
+export default CourseDetails;

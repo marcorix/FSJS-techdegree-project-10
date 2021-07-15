@@ -1,97 +1,70 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const Context = React.createContext();
+// import api request methods
+import Data from './Data';
 
-/**
- * Context provider to keep track of logged user, also provides 'Sign in' and
- * 'Sign out' actions that will update the state accordingly. Creates a cookie
- * to keep user data stored.
- */
+// create context instance using the Context API
+export const AppContext = React.createContext();
+
 export class Provider extends Component {
+  constructor() {
+    super();
+    this.data = new Data();
+  }
+
   state = {
-    authUser: Cookies.getJSON('authUser') || null,
-    encodedCredentials: Cookies.getJSON('encodedCredentials') || null,
+    authedUser: Cookies.getJSON('authedUser') || null,
   };
 
-  /**
-   * Signs in the user with provided credentials and updates the state
-   * and creates cookie to store authentication.
-   *
-   * @param {String} encodedCredentials
-   * @returns 'authUser' object with user details
-   */
+  // method authenticates current existing user.
+  // persists credentials in global state.
+  // sets cookie
   signIn = async (emailAddress, password) => {
-    const encodedCredentials = btoa(`${emailAddress}:${password}`);
-    let status;
-    let authUser;
-    await axios
-      .get('http://localhost:5000/api/users', {
-        headers: { Authorization: `Basic ${encodedCredentials}` },
-      })
-      .then((response) => {
-        authUser = response.data;
-        this.setState({ authUser, encodedCredentials });
-        const cookieOptions = { expires: 1 };
-        Cookies.set('authUser', JSON.stringify(authUser), cookieOptions);
-        Cookies.set(
-          'encodedCredentials',
-          JSON.stringify(encodedCredentials),
-          cookieOptions
-        );
-        status = response.status;
-      })
-      .catch((err) => {
-        status = err.response.status;
+    const user = await this.data.getUser(emailAddress, password);
+
+    if (user !== null) {
+      this.setState(() => {
+        user.emailAddress = emailAddress;
+        user.password = password;
+        return {
+          authedUser: user,
+        };
       });
-    return status;
+
+      Cookies.set('authedUser', JSON.stringify(user), { expires: 1 });
+    }
+    return user;
   };
 
-  /**
-   * Signs out the user and resets state. Also removes the cookie data where
-   * user authentication data is stored.
-   */
-  signOut = async () => {
+  // removes current user's credentials from state.
+  // removes cookie
+  signOut = () => {
     this.setState(() => {
-      return { authUser: null, encodedCredentials: null };
+      return { authedUser: null };
     });
-    Cookies.remove('authUser');
-    Cookies.remove('encodedCredentials');
+
+    Cookies.remove('authedUser');
   };
 
   render() {
-    const { authUser, encodedCredentials } = this.state;
+    const { authedUser } = this.state;
     const value = {
-      authUser,
-      encodedCredentials,
+      authedUser,
+      data: this.data,
       actions: {
         signIn: this.signIn,
         signOut: this.signOut,
       },
     };
-
     return (
-      <Context.Provider value={value}>{this.props.children}</Context.Provider>
+      <AppContext.Provider value={value}>
+        {this.props.children}
+      </AppContext.Provider>
     );
   }
 }
+export const Consumer = AppContext.Consumer;
 
-export const Consumer = Context.Consumer;
-
-/**
- * A higher-order function to wrap given component with Consumer to provide
- * context props and actions.
- *
- * @param {Component} Component to be wrapped
- * @returns 'Component' that is wrapped
- */
-export default function withContext(Component) {
-  return function ContextComponent(props) {
-    return (
-      <Context.Consumer>
-        {(context) => <Component {...props} context={context} />}
-      </Context.Consumer>
-    );
-  };
-}
+// eslint-disable-next-line
+export default { AppContext };

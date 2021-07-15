@@ -1,53 +1,47 @@
-import React, { Component } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
+import Context from '../Context';
 
-/**
- * A Component to view all courses and a link to create new course.
- */
-export default class Courses extends Component {
-  state = {
-    courses: [],
-  };
+// renders all courses on home "/" route
+const Courses = () => {
+  const context = useContext(Context.AppContext);
 
-  componentDidMount() {
-    axios
-      .get('http://localhost:5000/api/courses')
-      .then((response) => {
-        const courses = response.data;
-        this.setState({ courses });
-      })
-      .catch((err) => {
-        if (err.response.status === 500) {
-          this.props.history.push('/error');
-        }
-      });
-  }
+  // url manipulation
+  const history = useHistory();
 
-  /**
-   * Renders course details from the state courses list.
-   */
-  renderCourses() {
-    return this.state.courses.map((course) => (
-      <Link
-        className="course--module course--link"
-        to={`/courses/${course.id}`}
-        key={course.id}
-      >
-        <h2 className="course--label">Course</h2>
-        <h3 className="course--title">{course.title}</h3>
-      </Link>
-    ));
-  }
+  // state variable
+  const [coursesArray, setCoursesArray] = useState([]);
 
-  render() {
-    console.log(typeof this.state.courses);
-    return (
+  // calls method to fetch data
+  useEffect(() => {
+    context.data
+      .getCourses()
+      .then((data) => setCoursesArray(data))
+      .catch(() => history.push('/error'));
+  }, [context.data, history]);
+
+  // creates array of html elements
+  let courses = coursesArray.map((course, index) => (
+    <a
+      key={index}
+      className="course--module course--link"
+      href={`/courses/${course.id}`}
+    >
+      <h2 className="course--label">Course</h2>
+      <h3 className="course--title">{course.title}</h3>
+    </a>
+  ));
+
+  return (
+    <main>
       <div className="wrap main--grid">
-        {this.renderCourses()}
-        <Link
+        {/* list of courses */}
+        {courses}
+
+        {/* new course button */}
+        <a
           className="course--module course--add--module"
-          to="/courses/create"
+          href="/courses/create"
         >
           <span className="course--add--title">
             <svg
@@ -62,8 +56,10 @@ export default class Courses extends Component {
             </svg>
             New Course
           </span>
-        </Link>
+        </a>
       </div>
-    );
-  }
-}
+    </main>
+  );
+};
+
+export default Courses;
