@@ -60,6 +60,7 @@ const CreateCourse = () => {
       // posts data to database
       context.data
         .createCourse(course, signedIn.emailAddress, signedIn.password)
+        .then((res) => console.log(res))
         .then((errors) => {
           if (errors.length) {
             setErrors(errors);
