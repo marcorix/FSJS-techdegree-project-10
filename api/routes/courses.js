@@ -65,7 +65,7 @@ router.post(
   asyncHandler(async (req, res) => {
     try {
       await Courses.create(req.body);
-      const course = await Course.findOne({
+      const course = await Courses.findOne({
         where: {
           userId: req.body.userId,
         },
