@@ -49,8 +49,9 @@ const UserSignIn = () => {
         if (user === null) {
           setErrors(['Sign-in was unsuccessful']);
         } else {
-          const { from } = history.location.state || { from: history.goBack() };
-          history.push(from);
+          console.log(user);
+          // const { from } = history.location.state || { from: history.goBack() };
+          // history.push(from);
         }
       })
       .catch(() => history.push('/error'));

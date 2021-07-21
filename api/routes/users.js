@@ -9,14 +9,22 @@ const router = express.Router();
 /* Users routes */
 
 //returns the currently authenticated user along with a 200 HTTP status code.
-router.get('/users', authenticateUser, (req, res) => {
-  const user = req.currentUser;
-  res.status(200).json({
-    firstName: user.firstName,
-    lastName: user.lastName,
-    emailAddress: user.emailAddress,
-  });
-});
+router.get(
+  '/users',
+  authenticateUser,
+  asyncHandler(async (req, res) => {
+    const user = await Users.findOne({
+      where: {
+        emailAddress: req.currentUser.emailAddress,
+      },
+      attributes: {
+        exclude: ['password', 'createdAt', 'updatedAt'],
+      },
+    });
+
+    res.status(200).json(user);
+  })
+);
 
 // Post Route to add a new user:
 router.post(
